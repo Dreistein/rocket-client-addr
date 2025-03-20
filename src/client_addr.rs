@@ -76,7 +76,7 @@ fn is_local_ip(addr: &IpAddr) -> bool {
 fn from_request(request: &Request<'_>) -> Option<ClientAddr> {
     let (remote_ip, ok) = match request.remote() {
         Some(addr) => {
-            let ip = addr.ip();
+            let ip = addr.ip()?;
 
             let ok = !is_local_ip(&ip);
 
@@ -87,9 +87,7 @@ fn from_request(request: &Request<'_>) -> Option<ClientAddr> {
 
     if ok {
         match remote_ip {
-            Some(ip) => Some(ClientAddr {
-                ip,
-            }),
+            Some(ip) => Some(ClientAddr { ip }),
             None => unreachable!(),
         }
     } else {
@@ -117,26 +115,16 @@ fn from_request(request: &Request<'_>) -> Option<ClientAddr> {
                 }
 
                 match last_ip {
-                    Some(ip) => Some(ClientAddr {
-                        ip,
-                    }),
+                    Some(ip) => Some(ClientAddr { ip }),
                     None => match request.real_ip() {
-                        Some(real_ip) => Some(ClientAddr {
-                            ip: real_ip
-                        }),
-                        None => remote_ip.map(|ip| ClientAddr {
-                            ip,
-                        }),
+                        Some(real_ip) => Some(ClientAddr { ip: real_ip }),
+                        None => remote_ip.map(|ip| ClientAddr { ip }),
                     },
                 }
             },
             None => match request.real_ip() {
-                Some(real_ip) => Some(ClientAddr {
-                    ip: real_ip
-                }),
-                None => remote_ip.map(|ip| ClientAddr {
-                    ip,
-                }),
+                Some(real_ip) => Some(ClientAddr { ip: real_ip }),
+                None => remote_ip.map(|ip| ClientAddr { ip }),
             },
         }
     }

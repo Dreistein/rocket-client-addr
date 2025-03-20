@@ -15,9 +15,7 @@ pub struct ClientRealAddr {
 
 fn from_request(request: &Request<'_>) -> Option<ClientRealAddr> {
     match request.real_ip() {
-        Some(ip) => Some(ClientRealAddr {
-            ip,
-        }),
+        Some(ip) => Some(ClientRealAddr { ip }),
         None => {
             let forwarded_for_ip: Option<&str> = request.headers().get("x-forwarded-for").next(); // Only fetch the first one.
 
@@ -27,21 +25,17 @@ fn from_request(request: &Request<'_>) -> Option<ClientRealAddr> {
 
                     match forwarded_for_ip {
                         Some(forwarded_for_ip) => match forwarded_for_ip.trim().parse::<IpAddr>() {
-                            Ok(ip) => Some(ClientRealAddr {
-                                ip,
-                            }),
-                            Err(_) => request.remote().map(|addr| ClientRealAddr {
-                                ip: addr.ip()
-                            }),
+                            Ok(ip) => Some(ClientRealAddr { ip }),
+                            Err(_) => request
+                                .remote()
+                                .and_then(|addr| Some(ClientRealAddr { ip: addr.ip()? })),
                         },
-                        None => request.remote().map(|addr| ClientRealAddr {
-                            ip: addr.ip()
-                        }),
+                        None => request
+                            .remote()
+                            .and_then(|addr| Some(ClientRealAddr { ip: addr.ip()? })),
                     }
                 },
-                None => request.remote().map(|addr| ClientRealAddr {
-                    ip: addr.ip()
-                }),
+                None => request.remote().and_then(|addr| Some(ClientRealAddr { ip: addr.ip()? })),
             }
         },
     }
